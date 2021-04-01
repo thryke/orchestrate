@@ -73,13 +73,13 @@ y_str = ""
 
 def display_point(pointTool):
     x_str,y_str = ('{:.4f}'.format(pointTool[0]), '{:.4f}'.format(pointTool[1]))
-    findClosestFeature(float(x_str), float(y_str))
+    closest = findClosestFeature(float(x_str), float(y_str))
     lat, lon = convertToLatLong(x_str, y_str)
-    #print(x_str,y_str)
-    print(lat, lon)
     point = str(lat) + "," + str(lon)
     f = open("point.txt", "w")
-    f.write(point)
+    #f.write(point)
+    for c in closest:
+        f.write(str(c) + ", ")
     f.close()
 
 pointTool = QgsMapToolEmitPoint(canvas)
@@ -111,30 +111,35 @@ layer_shp = QgsVectorLayer(os.path.join(os.path.dirname(__file__), "../../AWOIS_
 layer2_shp = QgsVectorLayer(os.path.join(os.path.dirname(__file__), "../../ENC_Wrecks.shp"), "Natural Earth", "ogr")
 
 def findClosestFeature(x,y):
-    #print("Click coords: ", x, y)
-    features = layer_shp.getFeatures()
+    awois_features = layer_shp.getFeatures()
+    enc_features = layer2_shp.getFeatures()
     shortestDistance = float("inf")
     closestFeatureId = -1
     lat,lon = convertToLatLong(x,y)
     point = QgsGeometry(QgsPoint(lon,lat))
     closestGeometry = QgsGeometry(QgsPoint(0,0))
+    attrs = []
 
-    for feature in features:
-        #print("My point: ", point, ", Current point: ", feature.geometry())
-        fGeo = feature.geometry()
-        #f_x = fGeo.asPoint().x()
-        #f_y = fGeo.asPoint().y()
-        #newX,newY = convertToXY(f_x,f_y)
-        #fPoint = QgsGeometry(QgsPoint(newX,newY))
-        #print(fPoint)
+    for aFeature in awois_features:
+        fGeo = aFeature.geometry()
         dist = fGeo.distance(point)
         if dist < shortestDistance:
             shortestDistance = dist
-            closestFeature = feature.id()
-            closestGeometry = feature.geometry()
-    
-    print("Closest feature: ", closestFeature, " Feature geometry: ",  closestGeometry, " Distance: ", shortestDistance)
+            closestFeature = aFeature.id()
+            closestGeometry = aFeature.geometry()
+            attrs = aFeature.attributes()
 
+    for eFeature in enc_features:
+        fGeo = eFeature.geometry()
+        dist = fGeo.distance(point)
+        if dist < shortestDistance:
+            shortestDistance = dist
+            closestFeature = eFeature.id()
+            closestGeometry = eFeature.geometry()
+            attrs = eFeature.attributes()
+    
+    print("Closest feature: ", closestFeature, ", Feature geometry: ",  closestGeometry, ", Distance: ", shortestDistance, ", Attributes: ", attrs)
+    return attrs
 
 
 
