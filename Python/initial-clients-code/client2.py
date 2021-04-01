@@ -55,9 +55,13 @@ if __name__ == '__main__':
     receiver.daemon = False
     receiver.start()
 
-    # f = open("../../point.txt", "r")
-    # point = f.read()
-    # f.close()
+    f = open("../../point.txt", "r")
+    point = f.read()
+    f.close()
+
+    attrs = list(point.split(", "))
+    print(attrs[11])
+
     url = 'http://docs.python.org/'
     webbrowser.open_new_tab(url)
     webbrowser.open_new(url)
@@ -68,15 +72,7 @@ if __name__ == '__main__':
         if END:
             break
 
-        # if os.path.isfile("../../point.txt"):
-        #     f = open("../../point.txt", "r")
-        #     newPoint = f.read()
-        #     f.close()
-        #     os.remove("../../point.txt")
-
         
-
-        # point = newPoint
 
     receiver.join()
     print("Client Ended")

@@ -128,6 +128,10 @@ def findClosestFeature(x,y):
             closestFeature = aFeature.id()
             closestGeometry = aFeature.geometry()
             attrs = aFeature.attributes()
+            # print("----------------------")
+            # for a in attrs:
+            #     print(a)
+            # print(attrs[11])
 
     for eFeature in enc_features:
         fGeo = eFeature.geometry()
@@ -137,6 +141,7 @@ def findClosestFeature(x,y):
             closestFeature = eFeature.id()
             closestGeometry = eFeature.geometry()
             attrs = eFeature.attributes()
+            #print(attrs[10])
     
     print("Closest feature: ", closestFeature, ", Feature geometry: ",  closestGeometry, ", Distance: ", shortestDistance, ", Attributes: ", attrs)
     return attrs
