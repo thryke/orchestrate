@@ -57,12 +57,19 @@ def convertToLatLong(x,y):
     x_out, y_out = transform(inProj,outProj,x_f,y_f)
     return x_out, y_out
 
+def convertToXY(latitude, longitude):
+    inProj=('epsg:4326')
+    outProj =('epsg:3857')
+    x_out, y_out = transform(inProj,outProj,latitude,longitude)
+    return x_out, y_out
+
 
 x_str = ""
 y_str = ""
 
 def display_point(pointTool):
     x_str,y_str = ('{:.4f}'.format(pointTool[0]), '{:.4f}'.format(pointTool[1]))
+    findClosestFeature(float(x_str), float(y_str))
     lat, lon = convertToLatLong(x_str, y_str)
     #print(x_str,y_str)
     print(lat, lon)
@@ -95,16 +102,51 @@ if not glob("ne_10m_admin_0_countries.*"):
             # Extract all the contents of zip file in current directory
             zipObj.extractall()
 
-layer_shp = QgsVectorLayer(os.path.join(os.path.dirname(__file__), "ne_10m_admin_0_countries.shp"), "Natural Earth", "ogr")
+#layer_shp = QgsVectorLayer(os.path.join(os.path.dirname(__file__), "ne_10m_admin_0_countries.shp"), "Natural Earth", "ogr")
+layer_shp = QgsVectorLayer(os.path.join(os.path.dirname(__file__), "../../AWOIS_Wrecks.shp"), "Natural Earth", "ogr")
+layer2_shp = QgsVectorLayer(os.path.join(os.path.dirname(__file__), "../../ENC_Wrecks.shp"), "Natural Earth", "ogr")
+
+def findClosestFeature(x,y):
+    print("Click coords: ", x, y)
+    features = layer_shp.getFeatures()
+    shortestDistance = float("inf")
+    closestFeatureId = -1
+
+    for feature in features:
+        geom = feature.geometry()
+        attrs = feature.attributes()
+        #print(attrs)
+
+        print(feature.geometry())
+        lat,lon = convertToLatLong(x,y)
+        b = QgsGeometry.fromPoint(QgsPoint(lat,lon))
+        print(b)
+        dist = feature.geometry().distance(QgsGeometry.fromPointXY(QgsPointXY(x, y)))
+        if dist < shortestDistance:
+            shortestDistance = dist
+            closestFeature = feature.id()
+    
+    print(shortestDistance)
+
+
+
+
+
 if not layer_shp.isValid():
     print("Layer failed to load!")
 
+if not layer2_shp.isValid():
+    print("Layer failed to load!")
+
 project.addMapLayer(layer_shp)
+project.addMapLayer(layer2_shp)
 
 print(layer_shp.crs().authid())
+print(layer2_shp.crs().authid())
 print(rlayer2.crs().authid())
 canvas.setExtent(layer_shp.extent())
-canvas.setLayers([rlayer2, layer_shp])
+canvas.setExtent(layer2_shp.extent())
+canvas.setLayers([rlayer2, layer_shp, layer2_shp])
 canvas.zoomToFullExtent()
 canvas.freeze(True)
 canvas.show()

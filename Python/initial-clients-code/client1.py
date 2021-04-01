@@ -68,9 +68,11 @@ if __name__ == '__main__':
         if END:
             break
 
-        f = open("../../point.txt", "r")
-        newPoint = f.read()
-        f.close()
+        if os.path.isfile("../../point.txt"):
+            f = open("../../point.txt", "r")
+            newPoint = f.read()
+            f.close()
+            os.remove("../../point.txt")
 
         if (point != newPoint):
             s.send(newPoint.encode('utf-8'))

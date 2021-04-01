@@ -6,6 +6,7 @@ import os
 import math
 from threading import Thread
 import requests
+import webbrowser
 
 HOST = '127.0.0.1'  # default server on localhost
 PORT = 22000  # server port
@@ -54,12 +55,28 @@ if __name__ == '__main__':
     receiver.daemon = False
     receiver.start()
 
-    start_server = True
-
-    while True:  # DO CLIENT THINGS HERE
+    # f = open("../../point.txt", "r")
+    # point = f.read()
+    # f.close()
+    url = 'http://docs.python.org/'
+    webbrowser.open_new_tab(url)
+    webbrowser.open_new(url)
+    time.sleep(2)
+    
+    while True:  # While loop for duration of session
+        
         if END:
             break
+
+        # if os.path.isfile("../../point.txt"):
+        #     f = open("../../point.txt", "r")
+        #     newPoint = f.read()
+        #     f.close()
+        #     os.remove("../../point.txt")
+
         
 
-    receiver. join()
+        # point = newPoint
+
+    receiver.join()
     print("Client Ended")
