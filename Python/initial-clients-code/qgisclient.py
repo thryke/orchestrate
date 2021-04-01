@@ -23,7 +23,7 @@ from qgis.PyQt.QtCore import Qt
 
 from multiprocessing import Process, Pipe
 
-from pyproj import Proj, transform
+from pyproj import Proj, Transformer
 
 # Supply path to qgis install location
 QgsApplication.setPrefixPath(r"C:\Program Files\QGIS 3.16\apps\qgis", True)
@@ -52,15 +52,19 @@ canvas.setDestinationCrs(crs)
 def convertToLatLong(x,y):
     x_f = float(x)
     y_f = float(y)
-    inProj =('epsg:3857')
-    outProj=('epsg:4326')
-    x_out, y_out = transform(inProj,outProj,x_f,y_f)
+    # inProj =('epsg:3857')
+    # outProj=('epsg:4326')
+    # x_out, y_out = transform(inProj,outProj,x_f,y_f)
+    transformer = Transformer.from_crs("epsg:3857", "epsg:4326")
+    x_out,y_out = transformer.transform(x_f,y_f)
     return x_out, y_out
 
 def convertToXY(latitude, longitude):
-    inProj=('epsg:4326')
-    outProj =('epsg:3857')
-    x_out, y_out = transform(inProj,outProj,latitude,longitude)
+    # inProj=('epsg:4326')
+    # outProj =('epsg:3857')
+    # x_out, y_out = transform(inProj,outProj,latitude,longitude)
+    transformer = Transformer.from_crs("epsg:4326", "epsg:3857")
+    x_out,y_out = transformer.transform(latitude,longitude)
     return x_out, y_out
 
 
@@ -107,26 +111,29 @@ layer_shp = QgsVectorLayer(os.path.join(os.path.dirname(__file__), "../../AWOIS_
 layer2_shp = QgsVectorLayer(os.path.join(os.path.dirname(__file__), "../../ENC_Wrecks.shp"), "Natural Earth", "ogr")
 
 def findClosestFeature(x,y):
-    print("Click coords: ", x, y)
+    #print("Click coords: ", x, y)
     features = layer_shp.getFeatures()
     shortestDistance = float("inf")
     closestFeatureId = -1
+    lat,lon = convertToLatLong(x,y)
+    point = QgsGeometry(QgsPoint(lon,lat))
+    closestGeometry = QgsGeometry(QgsPoint(0,0))
 
     for feature in features:
-        geom = feature.geometry()
-        attrs = feature.attributes()
-        #print(attrs)
-
-        print(feature.geometry())
-        lat,lon = convertToLatLong(x,y)
-        b = QgsGeometry.fromPoint(QgsPoint(lat,lon))
-        print(b)
-        dist = feature.geometry().distance(QgsGeometry.fromPointXY(QgsPointXY(x, y)))
+        #print("My point: ", point, ", Current point: ", feature.geometry())
+        fGeo = feature.geometry()
+        #f_x = fGeo.asPoint().x()
+        #f_y = fGeo.asPoint().y()
+        #newX,newY = convertToXY(f_x,f_y)
+        #fPoint = QgsGeometry(QgsPoint(newX,newY))
+        #print(fPoint)
+        dist = fGeo.distance(point)
         if dist < shortestDistance:
             shortestDistance = dist
             closestFeature = feature.id()
+            closestGeometry = feature.geometry()
     
-    print(shortestDistance)
+    print("Closest feature: ", closestFeature, " Feature geometry: ",  closestGeometry, " Distance: ", shortestDistance)
 
 
 
