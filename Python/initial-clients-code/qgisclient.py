@@ -39,8 +39,6 @@ app = QgsApplication([], True)
 # Load providers
 app.initQgis()
 
-# Write your code here to load some layers, use processing
-# algorithms, etc.
 canvas = QgsMapCanvas()
 canvas.setWindowTitle("Orchestrate QGIS Input Window")
 canvas.setCanvasColor(Qt.white)
@@ -48,25 +46,14 @@ crs = QgsCoordinateReferenceSystem(3857)
 project = QgsProject.instance()
 canvas.setDestinationCrs(crs)
 
-#point = ()
-
-#def send_point(point, socket):
-#    socket.send(point.encode('utf-8'))
-
 def convertToLatLong(x,y):
     x_f = float(x)
     y_f = float(y)
-    # inProj =('epsg:3857')
-    # outProj=('epsg:4326')
-    # x_out, y_out = transform(inProj,outProj,x_f,y_f)
     transformer = Transformer.from_crs("epsg:3857", "epsg:4326")
     x_out,y_out = transformer.transform(x_f,y_f)
     return x_out, y_out
 
 def convertToXY(latitude, longitude):
-    # inProj=('epsg:4326')
-    # outProj =('epsg:3857')
-    # x_out, y_out = transform(inProj,outProj,latitude,longitude)
     transformer = Transformer.from_crs("epsg:4326", "epsg:3857")
     x_out,y_out = transformer.transform(latitude,longitude)
     return x_out, y_out
@@ -92,8 +79,6 @@ pointTool = QgsMapToolEmitPoint(canvas)
 pointTool.canvasClicked.connect(display_point)
 canvas.setMapTool(pointTool)
 
-#layer = QgsVectorLayer(r"C:\Users\Ryan\Desktop\shapefiles_dresden\gis_osm_landuse_a_07_1.shp","land use", "ogr")
-
 urlWithParams = 'type=xyz&url=https://a.tile.openstreetmap.org/%7Bz%7D/%7Bx%7D/%7By%7D.png&zmax=19&zmin=0&crs=EPSG3857'
 rlayer2 = QgsRasterLayer(urlWithParams, 'OpenStreetMap', 'wms')
 
@@ -112,12 +97,9 @@ if not glob("ne_10m_admin_0_countries.*"):
             # Extract all the contents of zip file in current directory
             zipObj.extractall()
 
-#layer_shp = QgsVectorLayer(os.path.join(os.path.dirname(__file__), "ne_10m_admin_0_countries.shp"), "Natural Earth", "ogr")
 layer_shp = QgsVectorLayer(os.path.join(os.path.dirname(__file__), "../../Merged.shp"), "Natural Earth", "ogr")
-#layer2_shp = QgsVectorLayer(os.path.join(os.path.dirname(__file__), "../../AWOIS_Obstructions.shp"), "Natural Earth", "ogr")
 
 fields = layer_shp.fields().names()
-#print(fields)
 fni = layer_shp.fields().indexFromName('VESSLTERMS')
 unique_values = layer_shp.uniqueValues(fni)
 
@@ -128,16 +110,16 @@ for unique_value in unique_values:
     symbol = QgsSymbol.defaultSymbol(layer_shp.geometryType())
     symbol.setOpacity(0.5)
 
-    color1 = QtGui.QColor('#ffee00')
-    color2 = QtGui.QColor('#00bbff')
+    obstruction_color = QtGui.QColor('#ffee00')
+    wreck_color  = QtGui.QColor('#00bbff')
+
+    # assigning different colors based on point type
     if unique_value == "OBSTRUCTION":
-        symbol.setColor(color1)
+        symbol.setColor(obstruction_color)
     else:
-        symbol.setColor(color2)
+        symbol.setColor(wreck_color)
     # configure a symbol layer
     layer_style = {}
-    #layer_style['color'] = '%d, %d, %d' % (randrange(0, 256), randrange(0, 256), randrange(0, 256))
-    #layer_style['color'] = '%d, %d, %d' % (randrange(0, 1), randrange(0, 1), randrange(0, 1))
     layer_style['outline'] = '#000000'
     symbol_layer = QgsSimpleFillSymbolLayer.create(layer_style)
 
@@ -163,31 +145,35 @@ def findClosestFeature(x,y):
     closestFeatureId = -1
     lat,lon = convertToLatLong(x,y)
     point = QgsGeometry(QgsPoint(lon,lat))
-    print('POINT:',point)
     closestGeometry = QgsGeometry(QgsPoint(0,0))
     attrs = []
 
+    # loop through all features
     for aFeature in awois_features:
         fGeo = aFeature.geometry()
         dist = fGeo.distance(point)
+        # update closest point, check to see if =-1 to because of some points with null coordinates
         if dist < shortestDistance and dist != -1:
             shortestDistance = dist
             closestFeature = aFeature.id()
             closestGeometry = aFeature.geometry()
-            print(shortestDistance)
             attrs = aFeature.attributes()
 
+    # cleaning the description field if it's not null because of some formatting issues
     if attrs[11] != "NULL":
         original_description = attrs[11]
+        # some description fields are not of type str, so this cleaning doesn't work on them
         if type(original_description) == str:
             cleaned_description = " ".join(original_description.split())
             attrs[11] = cleaned_description
         else: 
             cleaned_description = original_description
     
+    # display information about the closest feature
     print("Closest feature: ", closestFeature, "\nFeature geometry: ",  closestGeometry, "\nDistance: ", shortestDistance, "\nAttributes: ", attrs)
     return attrs
 
+# TODO: move this to second client (requires fixing networking), add searching for provided sunk year instead of description checking when available
 def closestFeatureSearch(attr):
     description = attr[11]
     cleaned = " ".join(description.split())
@@ -207,7 +193,6 @@ if not layer_shp.isValid():
     print("Layer failed to load!")
 
 project.addMapLayer(layer_shp)
-# project.addMapLayer(layer2_shp)
 
 print(layer_shp.crs().authid())
 print(rlayer2.crs().authid())
