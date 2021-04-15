@@ -58,6 +58,8 @@ if __name__ == '__main__':
     receiver.daemon = False
     receiver.start()
 
+    if not os.path.exists('../../point.txt'):
+        with open('../../point.txt', 'w'): pass
     f = open("../../point.txt", "r")
     point = f.read()
     f.close()
@@ -68,6 +70,7 @@ if __name__ == '__main__':
         if END:
             break
 
+        
         if os.path.isfile("../../point.txt"):
             f = open("../../point.txt", "r")
             newPoint = f.read()

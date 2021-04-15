@@ -160,10 +160,11 @@ def serve(portNum, c_name):
             sendData = serverData
             if (sendData != oldSendData): # Only sends data if new data to send
                 oldSendData = sendData
-                print(cont_conn)
                 print("Sending -> " + sendData + " <- to client") # Shows what is being sent to client
                 cont_conn.send(bytes(sendData,'utf-8')) # Sends data to client
             clientData = str(cont_conn.recv(1024).decode("utf-8")) # Wait for data from client
+            print('clientData = ', clientData)
+            serverData = clientData
             if not clientData:
                 print("Nothing received from client")
             print("Received " + clientData + " from client")
@@ -231,10 +232,10 @@ def engine_thread(portNum, c_name):
                 print("Sending -> " + sendData + " <- to engine")
                 cont_conn.send(bytes(sendData,'utf-8'))
                 controlData = "Default "
-                serverData = cont_conn.recv(1024).decode("utf-8") # Wait for data from engine
-                print("Received " + serverData + " from engine")
+                engineData = cont_conn.recv(1024).decode("utf-8") # Wait for data from engine
+                print("Received " + engineData + " from engine")
                 engineResponded = True
-                if (serverData == "end123 "): # Signal to end session
+                if (engineData == "end123 "): # Signal to end session
                     break
            
     except ConnectionResetError:

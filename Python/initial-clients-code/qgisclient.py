@@ -171,9 +171,26 @@ def findClosestFeature(x,y):
     
     # display information about the closest feature
     print("Closest feature: ", closestFeature, "\nFeature geometry: ",  closestGeometry, "\nDistance: ", shortestDistance, "\nAttributes: ", attrs)
+    
+    attrs_str = ""
+    for a in attrs:
+        print(attrs.index(a))
+        print(len(attrs)-1)
+        if attrs.index(a) != len(attrs)-1:
+            if type(a) == str:
+                attrs_str += a + ", "
+            else:
+                attrs_str += "NULL" + ", "
+        else:
+            if type(a) == str:
+                attrs_str += a
+            else:
+                attrs_str += "NULL"
+
+    print(attrs_str)
     return attrs
 
-# TODO: move this to second client (requires fixing networking), add searching for provided sunk year instead of description checking when available
+# TODO: move this to second client (requires fixing networking), add searching for provided year sunk instead of description checking when available
 def closestFeatureSearch(attr):
     description = attr[11]
     cleaned = " ".join(description.split())

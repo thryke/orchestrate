@@ -28,6 +28,9 @@ p.close()
 server_time = 0.0
 END = False
 
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+serverData = ""
 
 def receiver():
     global server_time, END
@@ -43,9 +46,9 @@ def receiver():
             print("Server ended; exiting")
             END = True
             break
-        splitServerData = serverData.split()
-        serverData = splitServerData[len(splitServerData) - 2] + " " + splitServerData[len(splitServerData) - 1]
-        print("Adjusted: " + serverData) 
+        #splitServerData = serverData.split()
+        #serverData = splitServerData[len(splitServerData) - 2] + " " + splitServerData[len(splitServerData) - 1]
+        #print("Adjusted: " + serverData) 
 
     s.close()
 
@@ -55,16 +58,7 @@ if __name__ == '__main__':
     receiver.daemon = False
     receiver.start()
 
-    f = open("../../point.txt", "r")
-    point = f.read()
-    f.close()
-
-    attrs = list(point.split(", "))
-    print(attrs[11])
-
-    url = 'http://docs.python.org/'
-    webbrowser.open_new_tab(url)
-    webbrowser.open_new(url)
+    sendWord = "default123" # Default value when actual media isn't being printed
     time.sleep(2)
     
     while True:  # While loop for duration of session
@@ -72,7 +66,7 @@ if __name__ == '__main__':
         if END:
             break
 
-        
+    s.send(sendWord.encode('utf-8'))
 
     receiver.join()
     print("Client Ended")

@@ -1,1 +1,0 @@
-15017, OBSTRUCTION, D, 12200, 37.141813, -75.286295, Low, Direct, NULL, NULL, NULL, NM 51/69 -- Unexploded ordinance reported in position 37/08/30N Lat 75/17/12W (NAD27). Entered 3/25/2013 by JCA. Source unknown. Entered 9/17/2012 by JCA., NULL, 
