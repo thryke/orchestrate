@@ -25,6 +25,10 @@ from multiprocessing import Process, Pipe
 
 from pyproj import Proj, Transformer
 
+from random import randrange
+import webbrowser
+
+
 # Supply path to qgis install location
 QgsApplication.setPrefixPath(r"C:\Program Files\QGIS 3.16\apps\qgis", True)
 
@@ -74,7 +78,9 @@ y_str = ""
 def display_point(pointTool):
     x_str,y_str = ('{:.4f}'.format(pointTool[0]), '{:.4f}'.format(pointTool[1]))
     closest = findClosestFeature(float(x_str), float(y_str))
+    #closestFeatureSearch(closest)
     lat, lon = convertToLatLong(x_str, y_str)
+    print(lat, lon)
     point = str(lat) + "," + str(lon)
     f = open("point.txt", "w")
     #f.write(point)
@@ -107,63 +113,106 @@ if not glob("ne_10m_admin_0_countries.*"):
             zipObj.extractall()
 
 #layer_shp = QgsVectorLayer(os.path.join(os.path.dirname(__file__), "ne_10m_admin_0_countries.shp"), "Natural Earth", "ogr")
-layer_shp = QgsVectorLayer(os.path.join(os.path.dirname(__file__), "../../AWOIS_Wrecks.shp"), "Natural Earth", "ogr")
-layer2_shp = QgsVectorLayer(os.path.join(os.path.dirname(__file__), "../../ENC_Wrecks.shp"), "Natural Earth", "ogr")
+layer_shp = QgsVectorLayer(os.path.join(os.path.dirname(__file__), "../../Merged.shp"), "Natural Earth", "ogr")
+#layer2_shp = QgsVectorLayer(os.path.join(os.path.dirname(__file__), "../../AWOIS_Obstructions.shp"), "Natural Earth", "ogr")
+
+fields = layer_shp.fields().names()
+#print(fields)
+fni = layer_shp.fields().indexFromName('VESSLTERMS')
+unique_values = layer_shp.uniqueValues(fni)
+
+# fill categories
+categories = []
+for unique_value in unique_values:
+    # initialize the default symbol for this geometry type
+    symbol = QgsSymbol.defaultSymbol(layer_shp.geometryType())
+    symbol.setOpacity(0.5)
+
+    color1 = QtGui.QColor('#ffee00')
+    color2 = QtGui.QColor('#00bbff')
+    if unique_value == "OBSTRUCTION":
+        symbol.setColor(color1)
+    else:
+        symbol.setColor(color2)
+    # configure a symbol layer
+    layer_style = {}
+    #layer_style['color'] = '%d, %d, %d' % (randrange(0, 256), randrange(0, 256), randrange(0, 256))
+    #layer_style['color'] = '%d, %d, %d' % (randrange(0, 1), randrange(0, 1), randrange(0, 1))
+    layer_style['outline'] = '#000000'
+    symbol_layer = QgsSimpleFillSymbolLayer.create(layer_style)
+
+    # replace default symbol layer with the configured one
+    if symbol_layer is not None:
+        symbol.changeSymbolLayer(0, symbol_layer)
+
+    # create renderer object
+    category = QgsRendererCategory(unique_value, symbol, str(unique_value))
+    # entry for the list of category items
+    categories.append(category)
+
+# create renderer object
+renderer = QgsCategorizedSymbolRenderer('VESSLTERMS', categories)
+
+# assign the created renderer to the layer
+if renderer is not None:
+    layer_shp.setRenderer(renderer)
 
 def findClosestFeature(x,y):
     awois_features = layer_shp.getFeatures()
-    enc_features = layer2_shp.getFeatures()
     shortestDistance = float("inf")
     closestFeatureId = -1
     lat,lon = convertToLatLong(x,y)
     point = QgsGeometry(QgsPoint(lon,lat))
+    print('POINT:',point)
     closestGeometry = QgsGeometry(QgsPoint(0,0))
     attrs = []
 
     for aFeature in awois_features:
         fGeo = aFeature.geometry()
         dist = fGeo.distance(point)
-        if dist < shortestDistance:
+        if dist < shortestDistance and dist != -1:
             shortestDistance = dist
             closestFeature = aFeature.id()
             closestGeometry = aFeature.geometry()
+            print(shortestDistance)
             attrs = aFeature.attributes()
-            # print("----------------------")
-            # for a in attrs:
-            #     print(a)
-            # print(attrs[11])
 
-    for eFeature in enc_features:
-        fGeo = eFeature.geometry()
-        dist = fGeo.distance(point)
-        if dist < shortestDistance:
-            shortestDistance = dist
-            closestFeature = eFeature.id()
-            closestGeometry = eFeature.geometry()
-            attrs = eFeature.attributes()
-            #print(attrs[10])
+    if attrs[11] != "NULL":
+        original_description = attrs[11]
+        if type(original_description) == str:
+            cleaned_description = " ".join(original_description.split())
+            attrs[11] = cleaned_description
+        else: 
+            cleaned_description = original_description
     
-    print("Closest feature: ", closestFeature, ", Feature geometry: ",  closestGeometry, ", Distance: ", shortestDistance, ", Attributes: ", attrs)
+    print("Closest feature: ", closestFeature, "\nFeature geometry: ",  closestGeometry, "\nDistance: ", shortestDistance, "\nAttributes: ", attrs)
     return attrs
 
+def closestFeatureSearch(attr):
+    description = attr[11]
+    cleaned = " ".join(description.split())
+    query = attr[1]
+    numbers_in_description = [int(s) for s in cleaned.split() if s.isdigit()]
+    for num in numbers_in_description:
+        if num >= 1500 and num <= 2100:
+            query += " " + str(num)
 
+    print(query)
+    
+    url = 'https://www.google.com/search?q=site%3Awrecksite.eu+' + query
+    webbrowser.open(url)
 
 
 if not layer_shp.isValid():
     print("Layer failed to load!")
 
-if not layer2_shp.isValid():
-    print("Layer failed to load!")
-
 project.addMapLayer(layer_shp)
-project.addMapLayer(layer2_shp)
+# project.addMapLayer(layer2_shp)
 
 print(layer_shp.crs().authid())
-print(layer2_shp.crs().authid())
 print(rlayer2.crs().authid())
 canvas.setExtent(layer_shp.extent())
-canvas.setExtent(layer2_shp.extent())
-canvas.setLayers([rlayer2, layer_shp, layer2_shp])
+canvas.setLayers([rlayer2, layer_shp])
 canvas.zoomToFullExtent()
 canvas.freeze(True)
 canvas.show()

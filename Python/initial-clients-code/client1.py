@@ -72,7 +72,7 @@ if __name__ == '__main__':
             f = open("../../point.txt", "r")
             newPoint = f.read()
             f.close()
-            #os.remove("../../point.txt")
+            os.remove("../../point.txt")
 
         if (point != newPoint):
             s.send(newPoint.encode('utf-8'))
